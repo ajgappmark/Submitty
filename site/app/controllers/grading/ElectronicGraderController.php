@@ -65,10 +65,17 @@ class ElectronicGraderController extends GradingController {
             case 'remove_empty':
                 return $this->ajaxRemoveEmpty();
                 break;
+            case 'new_view':
+                $this->newView();
+                break;
             default:
                 $this->showStatus();
                 break;
         }
+    }
+
+    public function newView(){
+        $this->core->getOutput()->renderOutput(array('grading', 'New'), 'showNewView');
     }
 
     public function ajaxRemoveEmpty(){
