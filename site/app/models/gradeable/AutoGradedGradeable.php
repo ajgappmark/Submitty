@@ -128,6 +128,18 @@ class AutoGradedGradeable extends AbstractModel {
         return $instance->getTotalPercent($clamp);
     }
 
+    /**
+     * Gets the highest submitted version number
+     * @return int
+     */
+    public function getHighestVersion() {
+        $highest_version = 0;
+        foreach($this->auto_graded_versions as $auto_graded_version) {
+            $highest_version = max($highest_version, $auto_graded_version->getVersion());
+        }
+        return $highest_version;
+    }
+
     /* Queue status access methods */
 
     /**
