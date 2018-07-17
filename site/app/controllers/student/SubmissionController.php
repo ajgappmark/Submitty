@@ -101,19 +101,15 @@ class SubmissionController extends AbstractController {
     }
 
     private function deleteRequest(){
-        //if($this->core->getUser()->getGroup() > $gradeable->getMinimumGradingGroup()){
-      //      $this->core->addErrorMessage("You do not have permission to delete regrade requests");
-       //     $this->core->redirect($this->core->getConfig()->getSiteUrl());
-       // }
         $gradeable_id = (isset($_REQUEST['gradeable_id'])) ? $_REQUEST['gradeable_id'] : null;
         $student_id = (isset($_REQUEST['student_id'])) ? $_REQUEST['student_id'] : null;
         if($this->core->getUser()->getId() !== $student_id && !$this->core->getUser()->accessFullGrading()){
             $this->core->addErrorMessage("You do not have permission to delete this request");
+            $this->core->redirect($this->core->getConfig()->getSiteUrl());
             return;
         }
         $this->core->getQueries()->deleteRegradeRequest($gradeable_id, $student_id);
     }
-
     private function popUp() {
         $gradeable_id = (isset($_REQUEST['gradeable_id'])) ? $_REQUEST['gradeable_id'] : null;
         $gradeable = $this->gradeables_list->getGradeable($gradeable_id, GradeableType::ELECTRONIC_FILE);

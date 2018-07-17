@@ -41,7 +41,7 @@
                     By Grading Sections:
                     <div style="margin-left: 20px">
                         {% for key, section in sections %}
-                            Section {{ key }}: {{ section.graded }} / {{ section.total }} ({{ section.percentage }}%)<br />
+                            Section {{ key }}: Graded: {{ section.graded }} / {{ section.total }} ({{ section.percentage }}%) Verified: {{ section.verified }} / {{ section.total }} ({{ section.verified_percentage }}%)<br />
                         {% endfor %}
                     </div>
                     <br />
