@@ -714,7 +714,7 @@ ORDER BY {$section_key}", $params);
     }
 
     public function getGradedComponentsCountByGradingSections($g_id, $sections, $section_key, $is_team) {
-         $u_or_t="u";
+        $u_or_t="u";
         $users_or_teams="users";
         $user_or_team_id="user_id";
         if($is_team){
@@ -750,7 +750,7 @@ ORDER BY {$u_or_t}.{$section_key}", $params);
         }
         return $return;
     }
-    public function getVerifiedComponentsCountByGradingSections($g_id, $sections, $section_key, $is_team) {
+public function getDoubleGradedComponentsCountByGradingSections($g_id, $sections, $section_key, $is_team) {
         $u_or_t="u";
         $users_or_teams="users";
         $user_or_team_id="user_id";
@@ -763,10 +763,8 @@ ORDER BY {$u_or_t}.{$section_key}", $params);
         $params = array($g_id);
         $where = "";
         if (count($sections) > 0) {
-            $where = "WHERE gcd.verifier_id IS NOT NULL";
-            echo($where);
+            $where = "WHERE {$section_key} IN (".implode(",", array_fill(0, count($sections), "?")).")";
             $params = array_merge($params, $sections);
-            print_r($params);
         }
         $this->course_db->query("
 SELECT {$u_or_t}.{$section_key}, count({$u_or_t}.*) as cnt
@@ -776,13 +774,50 @@ INNER JOIN (
   LEFT JOIN (
   gradeable_component_data AS gcd
   INNER JOIN gradeable_component AS gc ON gc.gc_id = gcd.gc_id AND gc.gc_is_peer = {$this->course_db->convertBoolean(false)}
-  )AS gcd ON gcd.gd_id = gd.gd_id WHERE gcd.g_id=?
+  )AS gcd ON gcd.gd_id = gd.gd_id WHERE gcd.g_id=? AND verifier_id IS NOT NULL
 ) AS gd ON {$u_or_t}.{$user_or_team_id} = gd.gd_{$user_or_team_id}
 {$where}
 GROUP BY {$u_or_t}.{$section_key}
 ORDER BY {$u_or_t}.{$section_key}", $params);
         foreach ($this->course_db->rows() as $row) {
-            print_r($row);
+            if ($row[$section_key] === null) {
+                $row[$section_key] = "NULL";
+            }
+            $return[$row[$section_key]] = intval($row['cnt']);
+        }
+        return $return;
+    }
+public function getVerifiedComponentsCountByGradingSections($g_id, $sections, $section_key, $is_team) {
+        $u_or_t="u";
+        $users_or_teams="users";
+        $user_or_team_id="user_id";
+        if($is_team){
+            $u_or_t="t";
+            $users_or_teams="gradeable_teams";
+            $user_or_team_id="team_id";
+        }
+        $return = array();
+        $params = array($g_id);
+        $where = "";
+        if (count($sections) > 0) {
+            $where = "WHERE {$u_or_t}.{$section_key} IN (".implode(",", array_fill(0, count($sections), "?")).")";
+            $params = array_merge($params, $sections);
+        }
+        $this->course_db->query("
+SELECT {$u_or_t}.{$section_key}, count({$u_or_t}.*) as cnt
+FROM {$users_or_teams} AS {$u_or_t}
+INNER JOIN (
+  SELECT * FROM gradeable_data AS gd
+  LEFT JOIN (
+  gradeable_component_data AS gcd
+  INNER JOIN gradeable_component AS gc ON gc.gc_id = gcd.gc_id AND gc.gc_is_peer = {$this->course_db->convertBoolean(false)}
+  INNER JOIN users AS u2 ON gcd_grader_id = user_id
+  )AS gcd ON gcd.gd_id = gd.gd_id WHERE gcd.g_id=? AND ((verifier_id IS NOT NULL) OR user_group < 3)
+) AS gd ON {$u_or_t}.{$user_or_team_id} = gd.gd_{$user_or_team_id}
+{$where}
+GROUP BY {$u_or_t}.{$section_key}
+ORDER BY {$u_or_t}.{$section_key}", $params);
+        foreach ($this->course_db->rows() as $row) {
             if ($row[$section_key] === null) {
                 $row[$section_key] = "NULL";
             }
@@ -801,12 +836,12 @@ ORDER BY {$u_or_t}.{$section_key}", $params);
         }
         $return = array();
         $this->course_db->query("
-SELECT gc_id, gc_title, gc_max_value, gc_is_peer, gc_order, round(AVG(comp_score),2) AS avg_comp_score, round(stddev_pop(comp_score),2) AS std_dev, COUNT(*) FROM(
+SELECT gc_id, gc_title, gc_max_value, gc_is_peer, gc_order, round(AVG(comp_score),2) AS avg_comp_score, round(stddev_pop(comp_score),2) AS std_dev, COUNT(*), COUNT(gcd.verifier_id IS NOT NULL) FROM(
   SELECT gc_id, gc_title, gc_max_value, gc_is_peer, gc_order,
   CASE WHEN (gc_default + sum_points + gcd_score) > gc_upper_clamp THEN gc_upper_clamp
   WHEN (gc_default + sum_points + gcd_score) < gc_lower_clamp THEN gc_lower_clamp
   ELSE (gc_default + sum_points + gcd_score) END AS comp_score FROM(
-    SELECT gcd.gc_id, gd.gd_{$user_or_team_id}, egv.{$user_or_team_id}, gc_title, gc_max_value, gc_is_peer, gc_order, gc_lower_clamp, gc_default, gc_upper_clamp,
+    SELECT gcd.gc_id, gc_title, gc_max_value, gc_is_peer, gc_order, gc_lower_clamp, gc_default, gc_upper_clamp,
     CASE WHEN sum_points IS NULL THEN 0 ELSE sum_points END AS sum_points, gcd_score
     FROM gradeable_component_data AS gcd
     LEFT JOIN gradeable_component AS gc ON gcd.gc_id=gc.gc_id
@@ -825,7 +860,7 @@ SELECT gc_id, gc_title, gc_max_value, gc_is_peer, gc_order, round(AVG(comp_score
     INNER JOIN(
       SELECT {$u_or_t}.{$user_or_team_id}, {$u_or_t}.{$section_key}
       FROM {$users_or_teams} AS {$u_or_t}
-      WHERE {$u_or_t}.{$section_key} IS NOT NULL
+      WHERE {$u_or_t}.{$user_or_team_id} IS NOT NULL
     ) AS {$u_or_t} ON gd.gd_{$user_or_team_id}={$u_or_t}.{$user_or_team_id}
     INNER JOIN(
       SELECT egv.{$user_or_team_id}, egv.active_version
@@ -840,6 +875,7 @@ ORDER BY gc_order
         ", array($g_id, $g_id, $g_id));
         foreach ($this->course_db->rows() as $row) {
             $return[] = new SimpleStat($this->core, $row);
+            print_r($row);
         }
         return $return;
     }

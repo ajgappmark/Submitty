@@ -42,12 +42,15 @@ class ElectronicGraderView extends AbstractView {
         }
         $graded = 0;
         $verified = 0;
+        $doubleGraded = 0;
         $total = 0;
         $no_team_total = 0;
         $team_total = 0;
         $team_percentage = 0;
         $total_students = 0;
         $graded_total = 0;
+        $verified_total = 0;
+        $doubleGraded_total = 0;
         $submitted_total = 0;
         $submitted_percentage = 0;
         $peer_total = 0;
@@ -69,6 +72,7 @@ class ElectronicGraderView extends AbstractView {
             }
             $graded += $section['graded_components'];
             $verified += $section['verified_components'];
+            $doubleGraded += $section['doubleGraded_components'];
             $total += $section['total_components'];
             if ($gradeable->isTeamAssignment()) {
                $no_team_total += $section['no_team'];
@@ -77,11 +81,16 @@ class ElectronicGraderView extends AbstractView {
         }
         if ($total === 0 && $no_team_total === 0){
             $graded_percentage = -1;
+            $verified_percentage = -1;
+            $doubleGraded_percentage = -1;
         } else if ($total === 0 && $no_team_total > 0){
             $graded_percentage = 0;
+            $verified_percentage = 0;
+            $doubleGraded_percentage = 0;
         } else{
             $graded_percentage = number_format(($graded / $total) * 100, 1);
             $verified_percentage = number_format(($verified / $total) * 100, 1);
+            $doubleGraded_percentage = number_format(($doubleGraded / $total) * 100, 1);
         }
 
         if($graded_percentage !== -1){
@@ -93,6 +102,8 @@ class ElectronicGraderView extends AbstractView {
             $num_components = $gradeable->getNumTAComponents();
             $submitted_total = $total/$num_components;
             $graded_total = round($graded/$num_components, 2);
+            $verified_total = round($verified/$num_components, 2);
+            $doubleGraded_total = round($doubleGraded/$num_components, 2);
             if($peer) {
                 $num_components = $gradeable->getNumPeerComponents() * $gradeable->getPeerGradeSet();
                 $graded_total = $graded/$num_components;
@@ -126,9 +137,11 @@ class ElectronicGraderView extends AbstractView {
                     } else {
                         $section['percentage'] = number_format(($section['graded_components'] / $section['total_components']) * 100, 1);
                         $section['verified_percentage'] = number_format(($section['verified_components'] / $section['total_components']) * 100, 1);
+                        $section['doubleGraded_percentage'] = number_format(($section['doubleGraded_components'] / $section['total_components']) * 100, 1);
                     }
                     $section['graded'] = round($section['graded_components']/$num_components, 1);
                     $section['verified'] = round($section['verified_components']/$num_components, 1);
+                    $section['doubleGraded'] = round($section['doubleGraded_components']/$num_components, 1);
                     $section['total'] = $section['total_components']/$num_components;
 
                     if ($key === "NULL") {
@@ -197,6 +210,10 @@ class ElectronicGraderView extends AbstractView {
             "submitted_percentage" => $submitted_percentage,
             "graded_total" => $graded_total,
             "graded_percentage" => $graded_percentage,
+            "verified_percentage" => $verified_percentage,
+            "verified_total" => $verified_total,
+            "doubleGraded_percentage" => $doubleGraded_percentage,
+            "doubleGraded_total" => $doubleGraded_total,
             "peer_total" => $peer_total,
             "peer_graded" => $peer_graded,
             "peer_percentage" => $peer_percentage,
