@@ -182,7 +182,7 @@
                 id="cell-{{ index }}-{{ loop.index0 }}"
                 data-id="{{ component.getId() }}"
                 data-score="{{ component_grade.getScore() | default('0') }}"
-                {% if component_grade.getGrader() != null %}
+                {% if component_grade.getHasMark() == true %}
                     data-grader="{{ component_grade.getGrader().getId() }}"
                 {% endif %}
                 {% if component_grade.getGradeTime() != null %}
@@ -214,7 +214,7 @@
                     id="cell-{{ index }}-{{ loop.index0 }}"
                     data-id="{{ component.getId() }}"
                     value="{{ component_grade.getScore() | default('0') }}"
-                    {% if component_grade.getGrader() != null %}
+                    {% if component_grade.getHasMark() == true %}
                         data-grader="{{ component_grade.getGrader().getId() }}"
                     {% endif %}
                     {% if component_grade.getGradeTime() != null %}

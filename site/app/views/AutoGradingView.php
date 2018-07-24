@@ -236,7 +236,7 @@ class AutoGradingView extends AbstractView {
         //find all names of instructors who graded part(s) of this assignment that are full access grader_names
         if (!$gradeable->getPeerGrading()) {
             foreach ($gradeable->getComponents() as $component) {
-                if ($component->getGrader() == NULL) {
+                if (!$component->getHasMark()) {
                     continue;
                 }
                 $name = $component->getGrader()->getDisplayedFirstName() . " " . $component->getGrader()->getLastName();
